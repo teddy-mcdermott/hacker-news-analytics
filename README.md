@@ -1,10 +1,10 @@
 # Hacker News Analysis Suite
 
-A complete data pipeline for collecting, storing, and analyzing the entire history of Hacker News. This project combines high-performance data scraping with powerful analytical tools to uncover trends in programming languages, popular topics, and influential users.
+A complete data pipeline for collecting, storing, and analyzing the entire history of Hacker News. This project combines high-performance data scraping with powerful analytical tools to uncover keyword trends and topic modelling of the data.
 
 ## Project Components
 
-This suite consists of three main components:
+This suite consists of two main components:
 
 ### 1. **[Data Scraper](Scraper/Scraper_README.md)** 
 High-performance parallel scraper that downloads all Hacker News items into PostgreSQL.
