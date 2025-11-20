@@ -2,7 +2,7 @@
 
 A complete data pipeline for collecting, storing, and analyzing the entire history of Hacker News. This project combines high-performance data scraping with powerful analytical tools to uncover trends in programming languages, popular topics, and influential users.
 
-## 🎯 Project Components
+## Project Components
 
 This suite consists of three main components:
 
@@ -20,7 +20,7 @@ Suite of analytical tools for extracting insights from the data.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Step 1: Scrape the Data
 ```bash
@@ -75,7 +75,7 @@ python top_users.py --limit 100
 - **[Database Schema](database/schema.md)** - Database structure reference
 
 
-## 🤝 Contributing
+## Contributing
 
 Contributions welcome! Please open an issue or PR.
 
@@ -83,14 +83,14 @@ Contributions welcome! Please open an issue or PR.
 
 
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Hacker News team for the free, open API!
 - BERTopic and sentence-transformers communities!
 
 ---
 
-## 📚 References
+## References
 
 - [BERTopic Documentation](https://maartengr.github.io/BERTopic/)
 - [PostgreSQL Full-Text Search](https://www.postgresql.org/docs/current/textsearch.html)
