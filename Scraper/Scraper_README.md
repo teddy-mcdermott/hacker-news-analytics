@@ -5,8 +5,7 @@ A high-performance, parallelised data scraper that downloads the entire history 
 ---
 
 ### Features
-Kv
-- Massively Parallel: Uses Python's multiprocessing to run multiple worker processes, maximising CPU and network usage.
+- Parallel: Uses Python's multiprocessing to run multiple worker processes, maximising CPU and network usage.
 <br>
 - Asynchronous Workers: Each worker uses asyncio and aiohttp to handle hundreds of concurrent API requests, dramatically increasing download speed.
 <br>
