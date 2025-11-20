@@ -1,113 +1,101 @@
-# High-Performance Hacker News Downloader
+# Hacker News Analysis Suite
 
-This project is a high-performance, parallelized data scraper designed to download the entire history of Hacker News items (stories, comments, jobs, etc.) and store them in a local PostgreSQL database. It uses a resilient dispatcher/worker architecture to ensure fast, efficient, and fault-tolerant downloading.
+A complete data pipeline for collecting, storing, and analyzing the entire history of Hacker News. This project combines high-performance data scraping with powerful analytical tools to uncover trends in programming languages, popular topics, and influential users.
 
-## Features
+## 🎯 Project Components
 
--   **Massively Parallel:** Uses Python's `multiprocessing` to run multiple worker processes, maximizing CPU and network usage.
--   **Asynchronous Workers:** Each worker uses `asyncio` and `aiohttp` to handle hundreds of concurrent API requests, dramatically increasing download speed.
--   **Resilient Job Queue:** A PostgreSQL-backed job queue ensures that if the script is stopped or crashes, it can resume exactly where it left off with no data loss or duplication.
--   **Efficient Database Storage:** Uses highly optimized, batched database inserts (`asyncpg`) to handle a high volume of writes without overwhelming the database.
--   **Real-time Monitoring:** The dispatcher provides a live, updating progress bar showing the percentage of data chunks completed.
--   **Dockerized Database:** The PostgreSQL database runs in a Docker container for easy setup, portability, and cleanup.
+This suite consists of three main components:
 
----
-## Architecture
+### 1. **[Data Scraper](Scraper/Scraper_README.md)** 
+High-performance parallel scraper that downloads all Hacker News items into PostgreSQL.
+- **What it does:** Downloads stories, comments, and other items from the Hacker News API
+- **Key features:** Parallel processing, fault tolerance, resumable downloads
+- **Output:** Complete HN database with 40M+ items
 
-The system is built on a dispatcher/worker model:
-
-1.  **`docker-compose.yml`**: Defines and runs the PostgreSQL database service in a Docker container, ensuring a consistent and isolated environment.
-2.  **`dispatcher.py`**: The main control script. On its first run, it populates a `job_chunks` table in the database with the entire range of Hacker News item IDs to be downloaded. It then launches a pool of worker processes and monitors the overall progress.
-3.  **`worker.py`**: The workhorse. Each worker process connects to the database, atomically claims a "chunk" of work from the `job_chunks` table, and then uses asynchronous requests to download all items in that range concurrently. The results are written to the database in large, efficient batches.
+### 2. **[Analysis Tools](Analysis/README.md)**
+Suite of analytical tools for extracting insights from the data.
+- **Temporal Analysis:** Track keyword frequency over time (Flask web app)
+- **Topic Modeling:** Discover popular topics using BERTopic (ML-based)
+- **User Influence:** Identify top contributors and analyze posting patterns
 
 ---
-## Prerequisites
 
-Before you begin, ensure you have the following installed:
+## 🚀 Quick Start
 
--   **Docker Desktop**: To run the PostgreSQL database container.
--   **Python 3.10+**: For running the scripts.
--   **Git**: For cloning the repository.
+### Step 1: Scrape the Data
+```bash
+cd scraper
+docker-compose up -d
+python dispatcher.py
+```
+⏱️ Takes ~3-20 hours to download full history. You can read the [Data Scraper README](Scraper/Scraper_README.md) for more details.
 
----
-## Setup and Installation
+### Step 2: Run Analysis
+```bash
+cd ../analysis
 
-1.  **Clone the Repository**
-    ```bash
-    git clone https://github.com/wayworm/hacker-news-data
-    cd hacker-news-data
-    ```
+# Temporal keyword analysis (web interface)
+cd temporal
+python app.py
 
-2.  **Install Python Dependencies**
-    It's recommended to use a virtual environment.
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-    pip install requests psycopg2-binary aiohttp asyncpg
-    ```
+# Topic modeling
+cd ../topics
+python bertopic_analysis.py --days 365 --max-items 5000
 
-3.  **Start the Database Server**
-    This command will download the PostgreSQL image and start the database container in the background.
-    ```bash
-    docker-compose up -d
-    ```
+# User influence ranking
+cd ../users
+python top_users.py --limit 100
+```
 
 ---
-## How to Run
 
-The entire process is managed by the dispatcher script.
+## What You Can Discover
 
-1.  **Start the Download**
-    From the project directory, run the dispatcher. It will automatically populate the job queue on the first run and then launch the workers.
-    ```bash
-    python dispatcher.py
-    ```
-
-2.  **Resetting the Database (Optional)**
-    If you want to start the download from scratch and delete all existing data, use the `--reset-db` flag.
-    ```bash
-    python dispatcher.py --reset-db
-    ```
+- **Programming Language Trends:** Which languages are gaining/losing popularity?
+- **Topic Evolution:** What topics dominate HN discussions?
+- **Influential Users:** Who are the most impactful contributors?
+- **Temporal Patterns:** How do discussions change over time?
+- **Community Dynamics:** Posting patterns, engagement metrics, and more!
 
 ---
-## Configuration
 
-You can tune the performance by adjusting the constants at the top of the `dispatcher.py` and `worker.py` files.
+## 📋 Prerequisites
 
--   **In `dispatcher.py`:**
-    -   `NUM_WORKERS`: The number of worker processes to launch on the main PC. A good starting point is 1.5x the number of your CPU cores.
-    -   `CHUNK_SIZE`: The number of item IDs in each job. Larger chunks mean less job management overhead.
-
--   **In `worker.py`:**
-    -   `CONCURRENT_REQUESTS`: The number of API requests a single async worker will make simultaneously. This is the most powerful dial for performance. `300` is a good, aggressive value.
-    -   `BATCH_SIZE`: The number of downloaded items to collect in memory before writing them to the database in a single batch. Larger batches are more efficient.
+- **Docker** - For PostgreSQL database
+- **Python 3.10+** - For all scripts
+- **50-100 GB disk space** - For complete dataset
+- **8+ GB RAM** - Recommended for analysis tools
 
 ---
-## Database Management
 
-You can connect to your database to view the data using any standard SQL client, like DBeaver.
+## 📖 Documentation
 
--   **Connection Details:**
-    -   **Host**: `localhost`
-    -   **Port**: `5432`
-    -   **Database**: `hacker_news`
-    -   **Username**: `myuser`
-    -   **Password**: `mypassword`
+- **[Scraper Setup](scraper/Scaper_README.md)** - Detailed installation and configuration
+- **[Analysis Guide](analysis/README.md)** - How to use each analysis tool
+- **[Database Schema](database/schema.md)** - Database structure reference
 
--   **Example Query: Get Child Comments**
-    To find the direct children of a story (e.g., item ID `363`), you can use the following query, which correctly handles the `kids` JSONB column:
-    ```sql
-    SELECT *
-    FROM public.items
-    WHERE id IN (
-        SELECT
-            value::bigint
-        FROM
-            public.items,
-            jsonb_array_elements_text(kids)
-        WHERE
-            id = 363
-            AND kids IS NOT NULL
-    );
-    ```
 
+## 🤝 Contributing
+
+Contributions welcome! Please open an issue or PR.
+
+---
+
+
+
+## 🙏 Acknowledgments
+
+- Hacker News team for the free, open API!
+- BERTopic and sentence-transformers communities!
+
+---
+
+## 📚 References
+
+- [BERTopic Documentation](https://maartengr.github.io/BERTopic/)
+- [PostgreSQL Full-Text Search](https://www.postgresql.org/docs/current/textsearch.html)
+- [Flask Documentation](https://flask.palletsprojects.com/)
+- [Matplotlib Gallery](https://matplotlib.org/stable/gallery/index.html)
+- [PostgreSQL](https://www.postgresql.org/)
+- [DBeaver](https://dbeaver.io/)
+- [Docker](https://www.docker.com/)

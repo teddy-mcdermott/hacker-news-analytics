@@ -3,6 +3,19 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+/Analysis/time-series/cache/
+/Analysis/time-series/static/images
+/Analysis/Models
+
+/Analysis/topics/cache/
+/Analysis/topics/images/
+/Analysis/topics/models/
+
+/Database/hn.dump
+
+/SCraper/multiprocessing
+
+
 # C extensions
 *.so
 *sql

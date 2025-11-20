@@ -7,15 +7,16 @@ import aiohttp
 import asyncpg
 
 # --- Configuration ---
-# NOTE: The DSN format for asyncpg is slightly different.
+
 DB_URI = "postgresql://myuser:mypassword@localhost:5432/hacker_news"
+
 # How many items a single worker will try to download at the same time.
-# This is the most important dial for performance. Start around 200-300.
+# This value significantly affects performance.
 CONCURRENT_REQUESTS = 300
-# The batch size for DB writes should be large.
+
+# The batch size for DB writes.
 BATCH_SIZE = 1000
 
-# --- Custom Logging ---
 def log(worker_id, message):
     """Custom log function to ensure immediate, unbuffered output from workers."""
 
@@ -26,24 +27,22 @@ def log(worker_id, message):
     
     return None
 
-   
 
-# --- Asynchronous API Fetching ---
+# API Fetching 
 async def fetch_item_async(session, item_id):
     """Asynchronously fetches a single item, returning the JSON data or None."""
     url = f"https://hacker-news.firebaseio.com/v0/item/{item_id}.json"
     try:
-        # Use aiohttp's ClientSession to make the request
         async with session.get(url, timeout=10) as response:
             response.raise_for_status()
             return await response.json()
     except (aiohttp.ClientError, asyncio.TimeoutError):
-        # Silently ignore failed requests for single items
         return None
 
-# --- Asynchronous Data Storage ---
+
+# Data Storage 
 async def store_batch_async(conn, items_batch, worker_id):
-    """Asynchronously stores a batch of items using asyncpg for high performance."""
+    """Stores a batch of items using asyncpg for high performance."""
     if not items_batch: return
     columns = ['id', 'type', 'by', 'time', 'text', 'url', 'title', 'score', 'descendants', 'parent', 'kids', 'deleted', 'dead']
     
@@ -56,7 +55,6 @@ async def store_batch_async(conn, items_batch, worker_id):
     if not values_to_insert: return
 
     try:
-        # asyncpg's executemany is highly optimized for bulk inserts.
         await conn.executemany(
             f"INSERT INTO items ({', '.join(columns)}) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) ON CONFLICT (id) DO NOTHING",
             values_to_insert
@@ -64,9 +62,11 @@ async def store_batch_async(conn, items_batch, worker_id):
     except Exception as e:
         log(worker_id, f"DB Error during batch insert: {e}")
 
-# --- Asynchronous Job Management ---
+
+# Job Management 
 async def claim_job_async(conn, worker_id):
     """Atomically finds and claims a 'pending' job from the database."""
+
     # Use a transaction to ensure atomicity
     async with conn.transaction():
         job = await conn.fetchrow("""
@@ -84,32 +84,31 @@ async def complete_job_async(conn, job_id):
     """Marks a job as 'completed' in the database."""
     await conn.execute("UPDATE job_chunks SET status = 'completed', updated_at = NOW() WHERE id = $1;", job_id)
 
-# --- Main Asynchronous Worker Logic ---
+# Worker Logic 
 async def worker_main_async(worker_id):
     """The core async worker function."""
     log(worker_id, "Starting up.")
     conn = await asyncpg.connect(DB_URI)
     
     try:
-        # Create a single, reusable aiohttp session for connection pooling
         async with aiohttp.ClientSession() as session:
             while True:
-                job_start_time = time.monotonic() # Record time when job is claimed
+                job_start_time = time.monotonic() 
+
                 job = await claim_job_async(conn, worker_id)
                 if job is None:
                     log(worker_id, "No more jobs to claim. Exiting.")
                     break
 
-                log(worker_id, f"▶️ Claimed job {job['id']}. Range: {job['start_id']} to {job['end_id']}.")
+                log(worker_id, f"Claimed job {job['id']}. Range: {job['start_id']} to {job['end_id']}.")
                 
                 # Create a list of all fetch tasks for the current job
                 tasks = [fetch_item_async(session, item_id) for item_id in range(job['start_id'], job['end_id'] + 1)]
                 
                 results = []
-                # Process tasks in chunks to avoid overwhelming memory
                 for i in range(0, len(tasks), BATCH_SIZE):
                     task_chunk = tasks[i:i+BATCH_SIZE]
-                    # asyncio.gather runs all tasks in the chunk concurrently
+
                     log(worker_id, f"...Job {job['id']} progress: fetching items {i} to {i+len(task_chunk)-1}")
                     chunk_results = await asyncio.gather(*task_chunk)
                     
@@ -121,7 +120,7 @@ async def worker_main_async(worker_id):
 
                 await complete_job_async(conn, job['id'])
                 
-                # --- Performance Calculation ---
+                # Performance Calculation 
                 job_end_time = time.monotonic()
                 duration_seconds = job_end_time - job_start_time
                 items_processed = len(results)
@@ -129,13 +128,13 @@ async def worker_main_async(worker_id):
                 if duration_seconds > 0:
                     records_per_minute = (items_processed / duration_seconds) * 60
 
-                log(worker_id, f"✅ Completed job {job['id']}. Processed {items_processed} items. Rate: {records_per_minute:.2f} items/min.")
+                log(worker_id, f"Completed job {job['id']}. Processed {items_processed} items. Rate: {records_per_minute:.2f} items/min.")
 
     except Exception as e:
         log(worker_id, f"An unhandled error occurred: {e}")
     finally:
         await conn.close()
-        log(worker_id, f"⏹️ Shutting down.")
+        log(worker_id, f"Shutting down.")
 
 def worker_main(worker_id):
     """
