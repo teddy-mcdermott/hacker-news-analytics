@@ -67,7 +67,7 @@ Multi-core CPU (4+ cores)
     ```bash
     python3 -m venv venv
     source venv/bin/activate  # On Windows: venv\Scripts\activate
-    pip install requests psycopg2-binary aiohttp asyncpg
+    pip install -r requirements.txt
     ```
 
 3.  **Start the Database Server**

@@ -10,8 +10,10 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 # Loads environment variables from .env, make sure to set yours
-env_path = Path('.') / '.env'
-load_dotenv(dotenv_path=env_path)
+from dotenv import load_dotenv
+load_dotenv()  # searches upward automatically
+
+
 user = os.getenv('POSTGRES_USER', 'default_user')
 password = os.getenv('POSTGRES_PASSWORD', 'default_pass')
 host = os.getenv('POSTGRES_HOST', 'localhost')
@@ -20,6 +22,7 @@ db = os.getenv('POSTGRES_DB', 'hacker_news')
 
 required_vars = ['POSTGRES_USER', 'POSTGRES_PASSWORD',
                  'POSTGRES_DB', 'POSTGRES_HOST', 'POSTGRES_PORT']
+
 for var in required_vars:
     if not os.getenv(var):
         raise RuntimeError(f"Missing required environment variable: {var}")

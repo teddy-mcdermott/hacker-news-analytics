@@ -42,8 +42,10 @@ STALE_JOB_CHECK_INTERVAL = (STALE_JOB_TIMEOUT_MINUTES * 60)
 PROGRESS_UPDATE_INTERVAL = 4
 
 # Loads environment variables from .env, make sure to set yours
-env_path = Path('.') / '.env'
-load_dotenv(dotenv_path=env_path)
+from dotenv import load_dotenv
+load_dotenv()  # searches upward automatically
+
+
 user = os.getenv('POSTGRES_USER', 'default_user')
 password = os.getenv('POSTGRES_PASSWORD', 'default_pass')
 host = os.getenv('POSTGRES_HOST', 'localhost')
