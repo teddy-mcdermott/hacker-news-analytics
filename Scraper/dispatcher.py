@@ -38,6 +38,9 @@ CHUNK_SIZE = 1000
 STALE_JOB_TIMEOUT_MINUTES = 3
 STALE_JOB_CHECK_INTERVAL = (STALE_JOB_TIMEOUT_MINUTES * 60)
 
+# How often (in seconds) the progress percentage is updated
+PROGRESS_UPDATE_INTERVAL = 4
+
 # Loads environment variables from .env, make sure to set yours
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
@@ -58,10 +61,6 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(filename='worker.log', level=logging.INFO)
 
 DB_URI = f"postgresql://{user}:{password}@{host}:{port}/{db}"
-
-
-# How often (in seconds) the progress percentage is updated
-PROGRESS_UPDATE_INTERVAL = 4
 
 
 def log(message):
