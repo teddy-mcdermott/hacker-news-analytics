@@ -1,38 +1,92 @@
-import multiprocessing
-import requests
+import argparse
+import logging
+from multiprocessing import Pool
+import os
+import time
+from pathlib import Path
+
+from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extras import execute_values
-import time
-import sys
+import requests
 
-from worker import worker_main
+from worker import run_worker
 
-# Configuration 
-NUM_WORKERS = 8
+# -- Configuration --
+
+# Argument Parsing
+
+
+def reset_flag_str_to_bool(value):
+    """Convert a string to boolean."""
+    return str(value).lower() in ('true', '1')
+
+
+parser = argparse.ArgumentParser(description="Hacker News Scraper Dispatcher")
+parser.add_argument('--reset-db', action='store', default=False,
+                    help="Reset the database? Accepts True, true, or 1")
+parser.add_argument('--num-workers', action='store', type=int, default=8,
+                    help="Number of worker processes to launch")
+
+args = parser.parse_args()
+
+# Convert reset-db argument to boolean
+reset_db = reset_flag_str_to_bool(args.reset_db)
+
+NUM_WORKERS = args.num_workers
 CHUNK_SIZE = 1000
-DB_URI = "postgresql://myuser:mypassword@localhost:5432/hacker_news"
-STALE_JOB_TIMEOUT_MINUTES = 15
+STALE_JOB_TIMEOUT_MINUTES = 3
+STALE_JOB_CHECK_INTERVAL = (STALE_JOB_TIMEOUT_MINUTES * 60)
+
+# Loads environment variables from .env, make sure to set yours
+env_path = Path('.') / '.env'
+load_dotenv(dotenv_path=env_path)
+user = os.getenv('POSTGRES_USER', 'default_user')
+password = os.getenv('POSTGRES_PASSWORD', 'default_pass')
+host = os.getenv('POSTGRES_HOST', 'localhost')
+port = int(os.getenv('POSTGRES_PORT', '5432'))
+db = os.getenv('POSTGRES_DB', 'hacker_news')
+
+required_vars = ['POSTGRES_USER', 'POSTGRES_PASSWORD',
+                 'POSTGRES_DB', 'POSTGRES_HOST', 'POSTGRES_PORT']
+for var in required_vars:
+    if not os.getenv(var):
+        raise RuntimeError(f"Missing required environment variable: {var}")
+
+# Logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='worker.log', level=logging.INFO)
+
+DB_URI = f"postgresql://{user}:{password}@{host}:{port}/{db}"
+
 
 # How often (in seconds) the progress percentage is updated
 PROGRESS_UPDATE_INTERVAL = 4
 
+
 def log(message):
     """Custom log function for the dispatcher to ensure immediate output."""
     print(f"\n{message}", flush=True)
+    logger.info(message)
 
-def get_db_connection():
+
+def get_db_connection(db_uri):
     """Establishes a new database connection."""
-    return psycopg2.connect(DB_URI)
+    return psycopg2.connect(db_uri)
+
 
 def setup_database(reset=False):
     """Ensures tables exist. If reset is True, drops them first."""
-    conn = get_db_connection()
+
+    conn = get_db_connection(DB_URI)
     with conn.cursor() as cursor:
         if reset:
-            print("Resetting database: Dropping existing tables...", flush=True)
+            log("Resetting database: Dropping existing tables...")
             cursor.execute("DROP TABLE IF EXISTS items, job_chunks;")
 
         # Create tables
+
+        # Data from API
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS items (
             id BIGINT PRIMARY KEY, type TEXT, by TEXT, time BIGINT, text TEXT,
@@ -41,32 +95,41 @@ def setup_database(reset=False):
         );
         """)
 
+        # Job Queue
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS job_chunks (
-            id SERIAL PRIMARY KEY, start_id BIGINT NOT NULL, end_id BIGINT NOT NULL,
+            id SERIAL PRIMARY KEY,
+            start_id BIGINT NOT NULL,
+            end_id BIGINT NOT NULL,
             status TEXT NOT NULL DEFAULT 'pending', worker_id INTEGER,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         );
         """)
 
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_job_chunks_status ON job_chunks(status);")
+        cursor.execute("""CREATE INDEX
+                       IF NOT EXISTS idx_job_chunks_status
+                       ON job_chunks(status);""")
     conn.commit()
     conn.close()
 
-# for updating the database at a later date
+
 def fetch_max_id():
     """Fetches the latest item ID from the Hacker News API."""
     try:
-        response = requests.get("https://hacker-news.firebaseio.com/v0/maxitem.json", timeout=10)
+        response = requests.get(
+            "https://hacker-news.firebaseio.com/v0/maxitem.json",
+            timeout=10)
+
         response.raise_for_status()
         return response.json()
     except requests.RequestException as e:
         print(f"\nError fetching max ID: {e}", flush=True)
         return None
 
+
 def populate_job_chunks():
-    conn = get_db_connection()
+    conn = get_db_connection(DB_URI)
     with conn.cursor() as cursor:
         cursor.execute("SELECT COALESCE(MAX(end_id), 0) FROM job_chunks;")
         current_max = cursor.fetchone()[0]
@@ -88,55 +151,35 @@ def populate_job_chunks():
 
         if chunks_to_insert:
             log(f"Inserting {len(chunks_to_insert)} new job chunks...")
-            execute_values(cursor, "INSERT INTO job_chunks (start_id, end_id) VALUES %s;", chunks_to_insert)
+            execute_values(cursor, """INSERT INTO job_chunks (start_id, end_id)
+            VALUES %s;""", chunks_to_insert)
             conn.commit()
     conn.close()
     log("Job queue population complete.")
 
-    """Populates the job_chunks table if it's empty."""
-    conn = get_db_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("SELECT COUNT(*) FROM job_chunks;")
-        if cursor.fetchone()[0] > 0:
-            return
-
-        print("\nJob queue is empty. Populating now...", flush=True)
-        max_id = fetch_max_id()
-        if max_id is None:
-            print("\nCannot populate jobs without a max_id.", flush=True)
-            return
-
-        chunks_to_insert = []
-        for i in range(1, max_id, CHUNK_SIZE):
-            chunks_to_insert.append((i, min(i + CHUNK_SIZE - 1, max_id)))
-
-        print(f"\nInserting {len(chunks_to_insert)} job chunks...", flush=True)
-        execute_values(cursor, "INSERT INTO job_chunks (start_id, end_id) VALUES %s;", chunks_to_insert)
-        conn.commit()
-    conn.close()
-    print("\nJob queue population complete.", flush=True)
 
 def reset_stale_jobs():
     """Resets jobs that were 'in_progress' for too long."""
-    conn = get_db_connection()
+
+    conn = get_db_connection(DB_URI)
     with conn.cursor() as cursor:
         cursor.execute("""
             UPDATE job_chunks SET status = 'pending', worker_id = NULL
-            WHERE status = 'in_progress' AND updated_at < NOW() - INTERVAL '%s minutes';
+            WHERE status = 'in_progress'
+            AND updated_at < NOW() - INTERVAL '%s minutes';
         """, (STALE_JOB_TIMEOUT_MINUTES,))
         if cursor.rowcount > 0:
             log(f"Reset {cursor.rowcount} stale jobs.")
     conn.commit()
     conn.close()
 
-if __name__ == "__main__":
-    should_reset_db = '--reset-db' in sys.argv
 
-    print("Dispatcher Starting", flush=True)
-    setup_database(reset=should_reset_db)
-    
-    if not should_reset_db:
-        reset_stale_jobs()
+if __name__ == "__main__":
+    print("Dispatcher Starting.", flush=True)
+    setup_database(reset=reset_db)
+
+    reset_stale_jobs()
+    last_stale_check = time.time()
 
     populate_job_chunks()
 
@@ -144,34 +187,51 @@ if __name__ == "__main__":
     log(f"Launching {NUM_WORKERS} workers...")
 
     # The maxtasksperchild argument helps with memory management and logging.
-    with multiprocessing.Pool(processes=NUM_WORKERS, maxtasksperchild=1) as pool:
-        # Use map_async to run workers in the background without blocking the dispatcher.
-        worker_result = pool.map_async(worker_main, worker_ids)
+    with Pool(processes=NUM_WORKERS, maxtasksperchild=1) as pool:
 
-        # Monitoring Loop
-        conn = get_db_connection()
-        try:
-            with conn.cursor() as cursor:
-                cursor.execute("SELECT COUNT(*) FROM job_chunks;")
-                total_jobs = cursor.fetchone()[0]
+        # Use map_async to run workers in the background
+        # without blocking the dispatcher.
+        worker_result = pool.map_async(run_worker, worker_ids)
 
-                if total_jobs == 0:
-                    log("No jobs found to monitor.")
-                else:
+        while not worker_result.ready():
+            conn = get_db_connection(DB_URI)
+            try:
+                with conn.cursor() as cursor:
 
-                    # Loop until all workers have finished their tasks.
-                    while not worker_result.ready():
-                        cursor.execute("SELECT COUNT(*) FROM job_chunks WHERE status = 'completed';")
-                        completed_jobs = cursor.fetchone()[0]
-                        
-                        percentage = (completed_jobs / total_jobs) * 100
-                        
-                        print(f"\rProgress: {percentage:.2f}% ({completed_jobs}/{total_jobs} chunks complete)", end="", flush=True)
-                        
-                        time.sleep(PROGRESS_UPDATE_INTERVAL)
-        finally:
-            conn.close()
+                    duration = time.time() - last_stale_check
+
+                    # Check for stale jobs only
+                    # every STALE_JOB_CHECK_INTERVAL seconds
+                    if duration >= STALE_JOB_CHECK_INTERVAL:
+                        cursor.execute(f"""
+                            UPDATE job_chunks
+                            SET status = 'pending', worker_id = NULL
+                            WHERE status = 'in_progress'
+                            AND updated_at < NOW() - INTERVAL
+                            '{STALE_JOB_TIMEOUT_MINUTES} minutes';
+                        """)
+                        if cursor.rowcount > 0:
+                            log(f"Reset {cursor.rowcount} stale jobs"
+                                f" during execution.")
+                        conn.commit()
+                        last_stale_check = time.time()
+
+                    # Always check progress
+                    cursor.execute("SELECT COUNT(*) FROM job_chunks;")
+                    total_jobs = cursor.fetchone()[0]
+                    cursor.execute("""SELECT COUNT(*) FROM job_chunks
+                                WHERE status = 'completed';""")
+                    completed_jobs = cursor.fetchone()[0]
+            finally:
+                conn.close()
+
+            percentage = (completed_jobs / total_jobs) * 100
+            print(f"\rProgress: {percentage:.2f}% "
+                  f"({completed_jobs}/{total_jobs} chunks complete)",
+                  end="", flush=True)
+
+            time.sleep(PROGRESS_UPDATE_INTERVAL)
 
     # Final print to ensure it shows 100%
-    print(f"\rProgress: 100.00% ({total_jobs}/{total_jobs} chunks complete)      ")
+    print(f"\rProgress: 100.00% ({total_jobs}/{total_jobs} chunks complete)")
     log("--- All workers have finished. Dispatcher shutting down. ---")
