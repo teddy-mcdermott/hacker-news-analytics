@@ -1,9 +1,9 @@
 import argparse
 import logging
 from multiprocessing import Pool
+from functools import partial
 import os
 import time
-from pathlib import Path
 
 from dotenv import load_dotenv
 import psycopg2
@@ -16,17 +16,25 @@ from worker import run_worker
 
 # Argument Parsing
 
-
 def reset_flag_str_to_bool(value):
     """Convert a string to boolean."""
     return str(value).lower() in ('true', '1')
 
 
 parser = argparse.ArgumentParser(description="Hacker News Scraper Dispatcher")
+parser.add_argument('--no-log', action='store_true', default=False,
+                    help="Enable detailed worker logging")
 parser.add_argument('--reset-db', action='store', default=False,
                     help="Reset the database? Accepts True, true, or 1")
 parser.add_argument('--num-workers', action='store', type=int, default=8,
                     help="Number of worker processes to launch")
+parser.add_argument('--chunk-size', action='store', type=int, default=1000,
+                    help="""Portion of job queue a worker will reserve. If
+                      excessive, lots of data may be lost
+                        during interruption.""")
+parser.add_argument('--batch-size', action='store', type=int, default=250,
+                    help="""Number of API objects to
+                        request at once, per worker.""")
 
 args = parser.parse_args()
 
@@ -34,17 +42,17 @@ args = parser.parse_args()
 reset_db = reset_flag_str_to_bool(args.reset_db)
 
 NUM_WORKERS = args.num_workers
-CHUNK_SIZE = 1000
+CHUNK_SIZE = args.chunk_size
+BATCH_SIZE = args.batch_size
 STALE_JOB_TIMEOUT_MINUTES = 3
 STALE_JOB_CHECK_INTERVAL = (STALE_JOB_TIMEOUT_MINUTES * 60)
+
 
 # How often (in seconds) the progress percentage is updated
 PROGRESS_UPDATE_INTERVAL = 4
 
 # Loads environment variables from .env, make sure to set yours
-from dotenv import load_dotenv
-load_dotenv()  # searches upward automatically
-
+load_dotenv()
 
 user = os.getenv('POSTGRES_USER', 'default_user')
 password = os.getenv('POSTGRES_PASSWORD', 'default_pass')
@@ -63,6 +71,11 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(filename='worker.log', level=logging.INFO)
 
 DB_URI = f"postgresql://{user}:{password}@{host}:{port}/{db}"
+
+if args.log:
+    os.environ['ENABLE_LOGGING'] = '1'
+else:
+    os.environ['ENABLE_LOGGING'] = '0'
 
 
 def log(message):
@@ -189,6 +202,9 @@ if __name__ == "__main__":
 
     # The maxtasksperchild argument helps with memory management and logging.
     with Pool(processes=NUM_WORKERS, maxtasksperchild=1) as pool:
+
+        # pass in batch_size
+        run_worker = partial(run_worker, batch_size=args.batch_size)
 
         # Use map_async to run workers in the background
         # without blocking the dispatcher.

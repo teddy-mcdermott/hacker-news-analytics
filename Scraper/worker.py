@@ -7,12 +7,8 @@ import aiohttp
 import logging
 import asyncpg
 from dotenv import load_dotenv
-from pathlib import Path
 
-# Loads environment variables from .env, make sure to set yours
-from dotenv import load_dotenv
-load_dotenv()  # searches upward automatically
-
+load_dotenv()
 
 user = os.getenv('POSTGRES_USER', 'default_user')
 password = os.getenv('POSTGRES_PASSWORD', 'default_pass')
@@ -27,31 +23,30 @@ for var in required_vars:
     if not os.getenv(var):
         raise RuntimeError(f"Missing required environment variable: {var}")
 
-
+# Database location
 DB_URI = f"postgresql://{user}:{password}@{host}:{port}/{db}"
+
+# The batch size for DB writes and fetchs at once.
+BATCH_SIZE = 1000
 
 # Logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(filename='worker.log', level=logging.INFO)
-
-# The batch size for DB writes and fetchs at once.
-BATCH_SIZE = 1000
 
 
 def log(worker_id, message):
     """Custom log function to ensure immediate,
     unbuffered output from workers."""
 
-    if "--log" in sys.argv:
+    if os.getenv('ENABLE_LOGGING') == '1':
         log_message = f"[Worker {worker_id}, PID: {os.getpid()}] {message}\n"
         sys.stdout.write(log_message)
         logger.info(log_message)
         sys.stdout.flush()
     return None
 
+
 # Data Storage
-
-
 async def store_batch(conn, items_batch, worker_id):
     """Stores a batch of items using asyncpg for high performance."""
     if not items_batch:
@@ -105,11 +100,10 @@ async def claim_job(conn, worker_id):
 async def complete_job(conn, job_id):
     """Marks a job as 'completed' in the database."""
     await conn.execute("""UPDATE job_chunks SET status = 'completed',
-                        updated_at = NOW() WHERE id = $1;", job_id""")
+                        updated_at = NOW() WHERE id = $1;""", job_id)
+
 
 # API Fetching
-
-
 async def fetch_item(session, item_id, worker_id):
     """Asynchronously fetches a single item,
       returning the JSON data or None."""
@@ -125,9 +119,7 @@ async def fetch_item(session, item_id, worker_id):
 
 
 # Worker Logic
-
-
-async def worker(worker_id):
+async def worker(worker_id, batch_size):
     """The core async worker function."""
     log(worker_id, "Starting up.")
     conn = await asyncpg.connect(DB_URI)
@@ -152,8 +144,8 @@ async def worker(worker_id):
 
                 results = []
 
-                for i in range(0, len(tasks), BATCH_SIZE):
-                    task_chunk = tasks[i:i+BATCH_SIZE]
+                for i in range(0, len(tasks), batch_size):
+                    task_chunk = tasks[i:i+batch_size]
 
                     log(worker_id,
                         f"...Job {job['id']} progress: "
@@ -192,12 +184,12 @@ async def worker(worker_id):
         log(worker_id, "Shutting down.")
 
 
-def run_worker(worker_id):
+def run_worker(worker_id, batch_size=1000):
     """
     A simple synchronous wrapper to launch the async worker.
     This is what the multiprocessing Pool will call.
     """
     try:
-        asyncio.run(worker(worker_id))
+        asyncio.run(worker(worker_id, batch_size))
     except KeyboardInterrupt:
         pass
