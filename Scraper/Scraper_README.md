@@ -203,10 +203,11 @@ You can connect to your database to view the data using any standard SQL client,
 
 
 ### Data Schema
+### Data Schema
 ```mermaid
 erDiagram
     items {
-        bigint id PK
+        bigint id
         text type
         text by
         bigint time
@@ -222,7 +223,7 @@ erDiagram
     }
     
     job_chunks {
-        serial id PK
+        serial id
         bigint start_id
         bigint end_id
         text status
@@ -235,10 +236,9 @@ erDiagram
 ```
 \```
 
-The `items` table contains:
-- `id`: Unique item identifier (bigint)
-...
-
+**Primary Keys:**
+- `items.id` - Unique Hacker News item identifier
+- `job_chunks.id` - Auto-incrementing job identifier
 
 The `items` table contains:
 
