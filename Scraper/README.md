@@ -111,10 +111,10 @@ The entire process is managed by the dispatcher script.
 
 1.  **Start the Download**
 
-    From the project directory, run the dispatcher. It will automatically populate the job queue on the first run and then launch the workers.
+    From the project directory (hacker-news-analysis), run the dispatcher. It will automatically populate the job queue on the first run and then launch the workers.
 
 ```bash 
-    python dispatcher.py 
+    python -m Scraper.dispatcher --foo 
 ```
 
  Here are the arguments it can take:
