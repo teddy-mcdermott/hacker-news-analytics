@@ -15,7 +15,7 @@ High-performance parallel scraper that downloads all Hacker News items into Post
 ### 2. **[Analysis Tools](Analysis/README.md)**
 Suite of analytical tools for extracting insights from the data.
 - **Temporal Analysis:** Track keyword frequency over time (Flask web app)
-- **Topic Modeling:** Discover popular topics using BERTopic (ML-based)
+- **Topic Modelling:** Discover popular topics using BERTopic (ML-based)
 - **User Influence:** Identify top contributors and analyse posting patterns
 
 ---
@@ -36,7 +36,7 @@ cd ../Analysis
 cd temporal
 python app.py
 
-# Topic modeling
+# Topic modelling
 cd ../topics
 python bertopic_analysis.py --days 365 --max-items 5000
 
