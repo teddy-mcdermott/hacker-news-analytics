@@ -24,7 +24,7 @@ Suite of analytical tools for extracting insights from the data.
 
 ### Step 1: Scrape the Data
 
-Follow the instructions [here](Scraper/README.md/#how-to-run)
+Follow the instructions [here](Scraper/README.md/#how-to-run).
 
 ⏱️ Takes ~3-20 hours to download full history. Read the whole [Data Scraper README](Scraper/README.md) for more details.
 
