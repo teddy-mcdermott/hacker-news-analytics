@@ -1,6 +1,6 @@
 # Hacker News Analysis Suite
 
-A complete data pipeline for collecting, storing, and analyzing the entire history of Hacker News. This project combines high-performance data scraping with powerful analytical tools to uncover keyword trends and topic modelling of the data.
+A complete data pipeline for collecting, storing, and analysing the entire history of Hacker News. This project combines high-performance data scraping with powerful analytical tools to uncover keyword trends and topic modelling of the data.
 
 ## Project Components
 
@@ -16,7 +16,7 @@ High-performance parallel scraper that downloads all Hacker News items into Post
 Suite of analytical tools for extracting insights from the data.
 - **Temporal Analysis:** Track keyword frequency over time (Flask web app)
 - **Topic Modeling:** Discover popular topics using BERTopic (ML-based)
-- **User Influence:** Identify top contributors and analyze posting patterns
+- **User Influence:** Identify top contributors and analyse posting patterns
 
 ---
 
@@ -53,7 +53,6 @@ python top_users.py --limit 100
 - **Topic Evolution:** What topics dominate HN discussions?
 - **Influential Users:** Who are the most impactful contributors?
 - **Temporal Patterns:** How do discussions change over time?
-- **Community Dynamics:** Posting patterns, engagement metrics, and more!
 
 ---
 
