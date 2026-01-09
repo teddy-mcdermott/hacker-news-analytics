@@ -1,5 +1,5 @@
 POSTGRES_USER=exampleuser
-POSTGRES_PASSWORD=mypassword
+POSTGRES_PASSWORD=examplepassword
 POSTGRES_DB=hacker_news
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432

@@ -23,7 +23,7 @@ def reset_flag_str_to_bool(value):
 
 
 parser = argparse.ArgumentParser(description="Hacker News Scraper Dispatcher")
-parser.add_argument('--no-log', action='store_true', default=False,
+parser.add_argument('--log', action='store_true', default=False,
                     help="Enable detailed worker logging")
 parser.add_argument('--reset-db', action='store', default=False,
                     help="Reset the database? Accepts True, true, or 1")
