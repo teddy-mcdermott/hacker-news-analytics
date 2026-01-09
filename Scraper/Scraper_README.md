@@ -64,58 +64,43 @@ Multi-core CPU (4+ cores)
 ---
 ## Setup and Installation
 
-1.  **Clone the Repository**
-
-    ```bash
-
-    git clone https://github.com/wayworm/hacker-news-analytics 
-    cd hacker-news-analytics 
-
-    ```
-
-  
-
-2.  **Install Python Dependencies**
-
-    I recommended you use a [virtual environment](https://docs.python.org/3/library/venv.html).
-
-    ```bash
-
-    python3 -m venv venv
-
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-    pip install -r requirements.txt
-
-    ```
-
-
- 3. **Environment Variables**
-
-Create a `.env` file in the project root (copy from `.example-env`):
+1. **Clone the Repository**
 ```bash
-cp .example-env .env
+   git clone https://github.com/wayworm/hacker-news-analytics 
+   cd hacker-news-analytics 
 ```
 
-Then edit `.env` with your database credentials:
+2. **Install Python Dependencies**
+
+   I recommended you use a [virtual environment](https://docs.python.org/3/library/venv.html).
+```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
 ```
-POSTGRES_USER=exampleuser
-POSTGRES_PASSWORD=examplepassword
-POSTGRES_DB=hacker_news
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
+
+3. **Environment Variables**
+
+   Create a `.env` file in the project root (copy from `.example-env`):
+```bash
+   cp .example-env .env
 ```
 
+   Then edit `.env` with your database credentials:
+```
+   POSTGRES_USER=exampleuser
+   POSTGRES_PASSWORD=examplepassword
+   POSTGRES_DB=hacker_news
+   POSTGRES_HOST=localhost
+   POSTGRES_PORT=5432
+```
 
-4.  **Start the Database Server**
+4. **Start the Database Server**
 
-    This command will download the PostgreSQL image and start the database container in the background.
-
-    ```bash
-
-    docker-compose up -d
-
-    ```
+   This command will download the PostgreSQL image and start the database container in the background.
+```bash
+   docker-compose up -d
+```
 
 ---
 
@@ -145,8 +130,6 @@ The entire process is managed by the dispatcher script.
 
     python dispatcher.py --batch-size 300 
 ```
-
-
 
 
 2.  **Stopping the Download**
@@ -234,40 +217,14 @@ erDiagram
     
     job_chunks ||--o{ items : "manages download of"
 ```
-\```
 
 **Primary Keys:**
 - `items.id` - Unique Hacker News item identifier
 - `job_chunks.id` - Auto-incrementing job identifier
 
-The `items` table contains:
-
-- `id`: Unique item identifier (bigint)
-
-- `type`: Item type (story, comment, job, poll, pollopt)
-
-- `by`: Username of submitter
-
-- `time`: Unix timestamp
-
-- `text`: Content (for comments)
-
-- `title`: Title (for stories)
-
-- `url`: External link (for stories)
-
-- `score`: Points
-
-- `kids`: JSONB array of child item IDs
-
-- `deleted`: Boolean flag
-
-- `dead`: Boolean flag  
-
 
 ---
 
-  
 
 ## References
 
