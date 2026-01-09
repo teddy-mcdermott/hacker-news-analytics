@@ -6,11 +6,11 @@ A complete data pipeline for collecting, storing, and analyzing the entire histo
 
 This suite consists of two main components:
 
-### 1. **[Data Scraper](Scraper/Scraper_README.md)** 
+### 1. **[Data Scraper](Scraper/README.md)** 
 High-performance parallel scraper that downloads all Hacker News items into PostgreSQL.
 - **What it does:** Downloads stories, comments, and other items from the Hacker News API
 - **Key features:** Parallel processing, fault tolerance, resumable downloads
-- **Output:** Complete HN database with 40M+ items
+- **Output:** Complete HN database with 45M+ items
 
 ### 2. **[Analysis Tools](Analysis/README.md)**
 Suite of analytical tools for extracting insights from the data.
@@ -23,12 +23,10 @@ Suite of analytical tools for extracting insights from the data.
 ## Quick Start
 
 ### Step 1: Scrape the Data
-```bash
-cd scraper
-docker-compose up -d
-python dispatcher.py
-```
-⏱️ Takes ~3-20 hours to download full history. You can read the [Data Scraper README](Scraper/Scraper_README.md) for more details.
+
+Follow the instructions [here](Scraper/README.md/#how-to-run)
+
+⏱️ Takes ~3-20 hours to download full history. Read the whole [Data Scraper README](Scraper/README.md) for more details.
 
 ### Step 2: Run Analysis
 ```bash
@@ -61,17 +59,29 @@ python top_users.py --limit 100
 
 ## 📋 Prerequisites
 
-- **Docker** - For PostgreSQL database
-- **Python 3.10+** - For all scripts
-- **50-100 GB disk space** - For complete dataset
-- **8+ GB RAM** - Recommended for analysis tools
+Before you begin, ensure you have the following installed:
+
+- Docker: To run the PostgreSQL database container.
+- Python 3.10+: For running the scripts.
+- Git: For cloning the repository.
+
+### System Requirements
+**Minimum**:
+4 GB RAM
+50 GB free disk space
+Stable internet connection
+
+**Recommended**:
+8+ GB RAM
+100+ GB disk space (for full history + indexes)
+Multi-core CPU (4+ cores)
 
 ---
 
 ## 📖 Documentation
 
-- **[Scraper Setup](scraper/Scaper_README.md)** - Detailed installation and configuration
-- **[Analysis Guide](analysis/README.md)** - How to use each analysis tool
+- **[Scraper Setup](scraper/README.md)** - Detailed installation and configuration
+- **[Analysis Guide](Analysis/README.md)** - How to use each analysis tool
 - **[Database Schema](database/schema.md)** - Database structure reference
 
 
