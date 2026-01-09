@@ -16,6 +16,7 @@ from worker import run_worker
 
 # Argument Parsing
 
+
 def reset_flag_str_to_bool(value):
     """Convert a string to boolean."""
     return str(value).lower() in ('true', '1')
