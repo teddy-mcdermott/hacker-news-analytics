@@ -5,12 +5,12 @@ from functools import partial
 import os
 import time
 
-from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extras import execute_values
 import requests
 
 from worker import run_worker
+import helper.config as config
 
 # -- Configuration --
 
@@ -30,12 +30,12 @@ parser.add_argument('--reset-db', action='store', default=False,
 parser.add_argument('--num-workers', action='store', type=int, default=8,
                     help="Number of worker processes to launch")
 parser.add_argument('--chunk-size', action='store', type=int, default=1000,
-                    help="""Portion of job queue a worker will reserve. If
-                      excessive, lots of data may be lost
-                        during interruption.""")
+                    help="Portion of job queue a worker will reserve."
+                    "If excessive, lots of data may be lost during"
+                    " interruption.")
 parser.add_argument('--batch-size', action='store', type=int, default=250,
-                    help="""Number of API objects to
-                        request at once, per worker.""")
+                    help="Number of API objects to request "
+                    "at once, per worker.")
 
 args = parser.parse_args()
 
@@ -52,20 +52,14 @@ STALE_JOB_CHECK_INTERVAL = (STALE_JOB_TIMEOUT_MINUTES * 60)
 # How often (in seconds) the progress percentage is updated
 PROGRESS_UPDATE_INTERVAL = 4
 
-# Loads environment variables from .env, make sure to set yours
-load_dotenv()
+env_vars = config.get_db_config()
 
-user = os.getenv('POSTGRES_USER', 'default_user')
-password = os.getenv('POSTGRES_PASSWORD', 'default_pass')
-host = os.getenv('POSTGRES_HOST', 'localhost')
-port = int(os.getenv('POSTGRES_PORT', '5432'))
-db = os.getenv('POSTGRES_DB', 'hacker_news')
+user = env_vars["user"]
+password = env_vars["password"]
+host = env_vars["host"]
+port = env_vars["port"]
+db = env_vars["db"]
 
-required_vars = ['POSTGRES_USER', 'POSTGRES_PASSWORD',
-                 'POSTGRES_DB', 'POSTGRES_HOST', 'POSTGRES_PORT']
-for var in required_vars:
-    if not os.getenv(var):
-        raise RuntimeError(f"Missing required environment variable: {var}")
 
 # Logging
 logger = logging.getLogger(__name__)

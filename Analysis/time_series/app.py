@@ -7,16 +7,20 @@ import matplotlib.pyplot as plt
 from sqlalchemy import create_engine, text
 from pathlib import Path
 
+import helper.config as config
+
 matplotlib.use("Agg")
 
 app = Flask(__name__)
 
+env_vars = config.get_db_config()
+
 # --- CONFIGURE CONNECTION ---
-DB_USER = "myuser"
-DB_PASSWORD = "mypassword"
-DB_HOST = "localhost"
-DB_PORT = 5432
-DB_NAME = "hacker_news"
+DB_USER = env_vars["user"]
+DB_PASSWORD = env_vars["password"]
+DB_HOST = env_vars["host"]
+DB_PORT = env_vars["port"]
+DB_NAME = env_vars["db"]
 
 engine = create_engine(
     f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
@@ -67,9 +71,9 @@ KEYWORD_QUERIES = {
 }
 
 # Create cache and image directories
-cache_dir = Path("Analysis/time-series/cache")
+cache_dir = Path("Analysis/time_series/cache")
 cache_dir.mkdir(exist_ok=True)
-image_dir = Path("Analysis/time-series/static/images")
+image_dir = Path("Analysis/time_series/static/images")
 image_dir.mkdir(parents=True, exist_ok=True)
 
 

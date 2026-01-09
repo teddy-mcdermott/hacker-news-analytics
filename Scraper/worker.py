@@ -6,22 +6,18 @@ import asyncio
 import aiohttp
 import logging
 import asyncpg
-from dotenv import load_dotenv
 
-load_dotenv()
+import helper.config as config
 
-user = os.getenv('POSTGRES_USER', 'default_user')
-password = os.getenv('POSTGRES_PASSWORD', 'default_pass')
-host = os.getenv('POSTGRES_HOST', 'localhost')
-port = int(os.getenv('POSTGRES_PORT', '5432'))
-db = os.getenv('POSTGRES_DB', 'hacker_news')
 
-required_vars = ['POSTGRES_USER', 'POSTGRES_PASSWORD',
-                 'POSTGRES_DB', 'POSTGRES_HOST', 'POSTGRES_PORT']
+env_vars = config.get_db_config()
 
-for var in required_vars:
-    if not os.getenv(var):
-        raise RuntimeError(f"Missing required environment variable: {var}")
+# --- CONFIGURE CONNECTION ---
+user = env_vars["user"]
+password = env_vars["password"]
+host = env_vars["host"]
+port = env_vars["port"]
+db = env_vars["db"]
 
 # Database location
 DB_URI = f"postgresql://{user}:{password}@{host}:{port}/{db}"
