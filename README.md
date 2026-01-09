@@ -30,7 +30,7 @@ Follow the instructions [here](Scraper/README.md/#how-to-run).
 
 ### Step 2: Run Analysis
 ```bash
-cd ../analysis
+cd ../Analysis
 
 # Temporal keyword analysis (web interface)
 cd temporal
@@ -80,7 +80,7 @@ Multi-core CPU (4+ cores)
 
 ## 📖 Documentation
 
-- **[Scraper Setup](scraper/README.md)** - Detailed installation and configuration
+- **[Scraper Setup](Scraper/README.md)** - Detailed installation and configuration
 - **[Analysis Guide](Analysis/README.md)** - How to use each analysis tool
 - **[Database Schema](Schema.md)** - Database structure reference
 
