@@ -82,7 +82,7 @@ Multi-core CPU (4+ cores)
 
 - **[Scraper Setup](scraper/README.md)** - Detailed installation and configuration
 - **[Analysis Guide](Analysis/README.md)** - How to use each analysis tool
-- **[Database Schema](database/schema.md)** - Database structure reference
+- **[Database Schema](Schema.md)** - Database structure reference
 
 
 ## Contributing
@@ -90,8 +90,6 @@ Multi-core CPU (4+ cores)
 Contributions welcome! Please open an issue or PR.
 
 ---
-
-
 
 ## Acknowledgments
 
