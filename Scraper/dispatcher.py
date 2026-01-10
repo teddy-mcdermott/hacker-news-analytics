@@ -93,34 +93,54 @@ def setup_database(reset=False):
             log("Resetting database: Dropping existing tables...")
             cursor.execute("DROP TABLE IF EXISTS items, job_chunks;")
 
-        # Create tables
-
-        # Data from API
+        # Create Items Table with Generated Search Vector
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS items (
-            id BIGINT PRIMARY KEY, type TEXT, by TEXT, time BIGINT, text TEXT,
-            url TEXT, title TEXT, score INTEGER, descendants INTEGER,
-            parent BIGINT, kids JSONB, deleted BOOLEAN, dead BOOLEAN
+            id BIGINT PRIMARY KEY,
+            type TEXT,
+            by TEXT,
+            time BIGINT,
+            text TEXT,
+            url TEXT,
+            title TEXT,
+            score INTEGER,
+            descendants INTEGER,
+            parent BIGINT,
+            kids JSONB,
+            deleted BOOLEAN,
+            dead BOOLEAN,
+            text_search_vector tsvector
+            GENERATED ALWAYS AS ( to_tsvector('english',
+                        coalesce(title, '') || ' ' || coalesce(text, ''))
+            ) STORED
         );
         """)
 
-        # Job Queue
+        # Create Job Queue Table
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS job_chunks (
             id SERIAL PRIMARY KEY,
             start_id BIGINT NOT NULL,
             end_id BIGINT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'pending', worker_id INTEGER,
+            status TEXT NOT NULL DEFAULT 'pending',
+            worker_id INTEGER,
             created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
             updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         );
         """)
 
-        cursor.execute("""CREATE INDEX
-                       IF NOT EXISTS idx_job_chunks_status
+        # Create Indexes
+        cursor.execute("""CREATE INDEX IF NOT EXISTS idx_job_chunks_status
                        ON job_chunks(status);""")
+
+        # GIN Index for the Full-Text Search
+        log("Ensuring Full-Text Search index exists...")
+        cursor.execute("""CREATE INDEX IF NOT EXISTS idx_items_search_vector
+                       ON items USING GIN(text_search_vector);""")
+
     conn.commit()
     conn.close()
+    log("Database setup complete.")
 
 
 def fetch_max_id():
