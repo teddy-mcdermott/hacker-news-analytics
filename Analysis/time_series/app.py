@@ -160,7 +160,7 @@ def index():
 def analyse():
     try:
         data = request.json
-        keywords_raw = [k.strip() 
+        keywords_raw = [k.strip()
                         for k in data["keywords"].split(",") if k.strip()]
         time_bin = data["timeBin"]
         rolling = int(data["rolling"])

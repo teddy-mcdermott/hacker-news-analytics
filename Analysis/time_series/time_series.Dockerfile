@@ -14,4 +14,4 @@ COPY ./Analysis/time_series ./Analysis/time_series
 ENV PYTHONPATH=/app
 
 # Tell Gunicorn to look inside the subfolder for 'app'
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--chdir", "Analysis/time_series", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--chdir", "Analysis/time_series", "--timeout", "600", "app:app"]
