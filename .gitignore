@@ -16,7 +16,7 @@ __pycache__/
 
 /Database/hn.dump
 
-docker-compose.override
+docker-compose.override.yml
 
 /Scraper/multiprocessing
 
