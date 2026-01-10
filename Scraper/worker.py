@@ -13,14 +13,15 @@ import helper.config as config
 env_vars = config.get_db_config()
 
 # --- CONFIGURE CONNECTION ---
-user = env_vars["user"]
-password = env_vars["password"]
-host = env_vars["host"]
-port = env_vars["port"]
-db = env_vars["db"]
+POSTGRES_USER = env_vars["user"]
+POSTGRES_PASSWORD = env_vars["password"]
+POSTGRES_HOST = env_vars["host"]
+POSTGRES_PORT = env_vars["port"]
+POSTGRES_DB = env_vars["db"]
+
 
 # Database location
-DB_URI = f"postgresql://{user}:{password}@{host}:{port}/{db}"
+DB_URI = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
 # The batch size for DB writes and fetchs at once.
 BATCH_SIZE = 1000

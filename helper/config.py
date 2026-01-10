@@ -14,16 +14,16 @@ def get_db_config():
     load_dotenv()
 
     # Get values with defaults
-    user = os.getenv('POSTGRES_USER', 'default_user')
-    password = os.getenv('POSTGRES_PASSWORD', 'default_pass')
-    host = os.getenv('POSTGRES_HOST', 'localhost')
-    port = int(os.getenv('POSTGRES_PORT', '5432'))
-    db = os.getenv('POSTGRES_DB', 'hacker_news')
+    POSTGRES_USER = os.getenv('POSTGRES_USER', 'default_user')
+    POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', 'default_pass')
+    POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
+    POSTGRES_PORT = int(os.getenv('POSTGRES_PORT', '5432'))
+    POSTGRES_DB = os.getenv('POSTGRES_DB', 'hacker_news')
 
     return {
-        'user': user,
-        'password': password,
-        'host': host,
-        'port': port,
-        'db': db
+        'user': POSTGRES_USER,
+        'password': POSTGRES_PASSWORD,
+        'host': POSTGRES_HOST,
+        'port': POSTGRES_PORT,
+        'db': POSTGRES_DB
     }
