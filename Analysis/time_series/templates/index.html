@@ -1,16 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hacker News Trend Analysis</title>
     <link rel="stylesheet" type="text/css" href="static/styles/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
+
+
 <body>
     <div class="container">
         <div class="header">
-            <h1>Hacker News Trend Analysis</h1>
-            <p>Analyse keyword trends over time with normalized post frequency.</p>
+            <h1>Hacker News Trends</h1>
+        </div>
+
+        <div class="info">
+            <div class="info-icon">
+                <i class="fas fa-circle-info"></i>
+            </div>
+            <div class="info-content">
+                <p>Explore keyword popularity on <a href="https://news.ycombinator.com" target="_blank">Hacker News</a>. This tool produces a graph comparing your search terms, so you can final prove to everyone you were right: pizza is more popular than burgers. I made this tool to use term frequency as a proxy for programming language trends, but I think you could seriously use it for other technological topics that are commonly spoken about on Hacker News.</p>
+                <p class="small">
+                    <strong>Note:</strong> Search results are cached. High-frequency terms (like 
+                    <a href="https://en.wikipedia.org/wiki/Function_word" target="_blank">function words</a>) 
+                    may take longer to process on the first run.
+                </p>
+            </div>
         </div>
         
         <div class="card">
@@ -19,7 +36,7 @@
                     <label for="keywords">Keywords (comma-separated)</label>
                     <input type="text" id="keywords" name="keywords" 
                            placeholder="e.g., python, rust, javascript" required>
-                    <div class="hint">Quick select popular keywords:</div>
+                    <div class="hint">Example terms:</div>
                     <div class="chip-container">
                         <div class="chip" onclick="addKeyword('python')">Python</div>
                         <div class="chip" onclick="addKeyword('rust')">Rust</div>
@@ -74,7 +91,10 @@
 </body>
 
 <footer class="footer">
-    <p> By <a href="https://www.teddymcdermott.co.uk">Teddy McDermott</a>.</p>
+    <a href="https://github.com/your-profile" target="_blank">
+        <i class="fab fa-github"></i>
+    </a>
+    <a href="https://www.teddymcdermott.co.uk">Teddy McDermott</a>
 </footer>
 
 
