@@ -70,10 +70,11 @@ KEYWORD_QUERIES = {
     "beam": "beam & (apache | dataflow | pipeline)",
 }
 
-# Create cache and image directories
-cache_dir = Path("Analysis/time_series/cache")
+BASE_DIR = Path(__file__).parent.resolve()
+
+cache_dir = BASE_DIR / "cache"
 cache_dir.mkdir(exist_ok=True)
-image_dir = Path("Analysis/time_series/static/images")
+image_dir = BASE_DIR / "static" / "images"
 image_dir.mkdir(parents=True, exist_ok=True)
 
 
