@@ -16,10 +16,11 @@ __pycache__/
 
 /Database/hn.dump
 
-
+docker-compose.override
 
 /Scraper/multiprocessing
 
+Test.csv
 
 # C extensions
 *.so

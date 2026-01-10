@@ -1,16 +1,33 @@
 services:
   db:
     image: postgres:14-alpine
-    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    command: postgres -c 'synchronous_commit=off'
+    networks:
+      - hn-network
 
-volumes:
-  postgres_data:
+  web:
+    build:
+      context: .
+      dockerfile: ./Analysis/time_series/Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    networks:
+      - hn-network
+
+  scraper:
+    build:
+      context: .
+      dockerfile: ./Scraper/Dockerfile
+    depends_on:
+      - db
+    networks:
+      - hn-network
+
+networks:
+  hn-network:
+    driver: bridge

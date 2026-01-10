@@ -1,0 +1,8 @@
+services:
+  db:
+    volumes:
+      - hacker-news-analytics_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  hacker-news-analytics_postgres_data:
+    external: true
