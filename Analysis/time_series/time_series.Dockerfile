@@ -13,5 +13,5 @@ COPY ./Analysis/time_series ./Analysis/time_series
 # 3. Set Python path so it can find the 'helper' module
 ENV PYTHONPATH=/app
 
-WORKDIR /app/Analysis/time_series
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+# Tell Gunicorn to look inside the subfolder for 'app'
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--chdir", "Analysis/time_series", "app:app"]

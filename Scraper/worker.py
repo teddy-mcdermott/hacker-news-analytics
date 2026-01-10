@@ -9,7 +9,6 @@ import asyncpg
 
 import helper.config as config
 
-
 env_vars = config.get_db_config()
 
 # --- CONFIGURE CONNECTION ---
