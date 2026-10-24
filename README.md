@@ -30,6 +30,13 @@ trends over time across 45M+ Hacker News items.
 
 ## Quick Start
 
+Install [uv](https://docs.astral.sh/uv/) and sync the group you need. The web app and scraper use lightweight environments; topic modelling runs separately with the `topics` group.
+
+```bash
+uv sync --group web
+uv run python -c "import Analysis.time_series.app"
+```
+
 ### Step 1: Scrape the Data
 
 Follow the instructions [here](Scraper/README.md/#how-to-run).
@@ -38,20 +45,21 @@ Follow the instructions [here](Scraper/README.md/#how-to-run).
 
 ### Step 2: Run Analysis
 ```bash
-cd ../Analysis
+# Start the web interface (Docker)
+docker compose up --build web
 
-# Temporal keyword analysis (web interface)
-cd temporal
-python app.py
+# Precompute topic results (Docker; shares cache and image volumes with web)
+docker compose --profile topics run --rm topics python Analysis/topics/bertopic_analysis.py --days 365 --max-items 5000
 
-# Topic modelling
-cd ../topics
-python bertopic_analysis.py --days 365 --max-items 5000
+# Or run topic modelling locally after installing its dependencies
+uv sync --group topics
+uv run python Analysis/topics/bertopic_analysis.py --days 365 --max-items 5000
 
 # User influence ranking
-cd ../users
-python users.py --limit 100
+uv run python Analysis/users/top_users.py --limit 100
 ```
+
+The web app's topic page only serves precomputed results. Run the topic command first with the same `days`, `min-score`, `max-items`, and `type` settings selected in the page.
 
 ---
 
@@ -69,7 +77,7 @@ python users.py --limit 100
 Before you begin, ensure you have the following installed:
 
 - Docker: To run the PostgreSQL database container.
-- Python 3.10+: For running the scripts.
+- Python 3.11+ and uv: For running the scripts locally.
 - Git: For cloning the repository.
 
 ### System Requirements

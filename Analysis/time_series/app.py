@@ -1,7 +1,4 @@
 from datetime import datetime
-import threading
-from types import SimpleNamespace
-
 from flask import Flask, render_template, request, jsonify
 import pandas as pd
 import matplotlib
@@ -10,7 +7,8 @@ from sqlalchemy import create_engine, text
 
 import helper.config as config
 from helper.paths import get_cache_path, get_image_path
-from Analysis.topics.topics import get_model_identity, load_or_train_model, analyse_topics, visualise_topics
+from helper.topic_identity import get_model_identity
+from types import SimpleNamespace
 
 matplotlib.use("Agg")
 
@@ -346,60 +344,35 @@ def analyse():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-analysis_status = {}
-
-
 @app.route("/analyse_topics", methods=["POST"])
 def start_topic_analysis():
-    data = request.json
-    task_id = f"task_{datetime.now().strftime('%H%M%S')}"
-
-    analysis_status[task_id] = {"status": "processing", "result": None}
-
-    thread = threading.Thread(target=run_heavy_nlp, args=(data, task_id))
-    thread.start()
-
-    return jsonify({"success": True, "task_id": task_id})
-
-
-def run_heavy_nlp(params, task_id):
     try:
+        params = request.get_json() or {}
         args = SimpleNamespace(
-            days=params.get('days', 365),
-            min_score=params.get('min_score', 10),
-            max_items=params.get('max_items', 50000),
-            type=params.get('type', 'story'),
-            min_topic_size=params.get('min_topic_size', 10),
-            num_topics=params.get('num_topics', None),
-            refresh=params.get('refresh', False),
-            load_model=params.get('load_model', None)
+            days=int(params.get("days", 365)),
+            min_score=int(params.get("min_score", 10)),
+            max_items=int(params.get("max_items", 50000)),
+            type=params.get("type", "story"),
+            load_model=None,
         )
-
+        if args.type not in {"story", "comment", "all"}:
+            return jsonify({"success": False, "error": "Invalid type"}), 400
         model_name = get_model_identity(args)
-
-        topic_model, topics, df = load_or_train_model(args, model_name)
-
-        if topic_model is not None:
-            analyse_topics(topic_model, df, topics)
-            visualise_topics(topic_model, df, topics, model_name)
-
-            analysis_status[task_id] = {
-                "status": "completed",
-                "images": [
-                    f"/static/images/topic_distribution_{model_name}.png",
-                    f"/static/images/topic_clusters_2d_{model_name}.png"
-                ]
-            }
-        else:
-            analysis_status[task_id] = {"status": "error", "message": "Model failed to initialise"}
-
+        image_names = [
+            f"topic_distribution_{model_name}.png",
+            f"topic_clusters_2d_{model_name}.png",
+        ]
+        data_path = get_cache_path(f"topic_documents_{model_name}.csv")
+        if not data_path.is_file() or not all(get_image_path(name).is_file() for name in image_names):
+            return jsonify({"success": False, "error": "This configuration has not been computed."}), 404
+        topics_data = pd.read_csv(data_path).to_dict("records")
+        return jsonify({
+            "success": True,
+            "images": [f"/static/images/{name}" for name in image_names],
+            "data": topics_data,
+        })
     except Exception as e:
-        analysis_status[task_id] = {"status": "error", "message": str(e)}
-
-
-@app.route("/check_status/<task_id>")
-def check_status(task_id):
-    return jsonify(analysis_status.get(task_id, {"status": "not_found"}))
+        return jsonify({"success": False, "error": str(e)}), 400
 
 
 if __name__ == "__main__":

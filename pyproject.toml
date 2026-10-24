@@ -1,0 +1,35 @@
+[project]
+name = "hacker-news-analytics"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "python-dotenv",
+    "psycopg2-binary",
+    "sqlalchemy",
+    "pandas",
+    "matplotlib",
+]
+
+[dependency-groups]
+scraper = ["aiohttp", "asyncpg", "requests"]
+web = ["flask", "gunicorn"]
+topics = [
+    "bertopic",
+    "sentence-transformers",
+    "umap-learn",
+    "scikit-learn",
+    "numpy",
+    "torch",
+]
+dev = ["black"]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[tool.uv]
+package = false

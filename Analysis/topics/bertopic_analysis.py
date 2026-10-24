@@ -17,6 +17,7 @@ from umap import UMAP
 
 from helper import config
 from helper.paths import get_cache_path, get_image_path
+from helper.topic_identity import get_model_identity
 
 matplotlib.use("Agg")  # Use non-interactive backend
 
@@ -551,12 +552,6 @@ def log_completion_report(model_name):
     log(f"  - Images: {get_image_path('')}/")
     log(f"  - Data: {get_cache_path('')}/")
     log(f"  - Model: {model_dir}/{model_name}.pkl")
-
-
-def get_model_identity(args):
-    if args.load_model:
-        return args.load_model
-    return f"bertopic_{args.type}_days{args.days}_minscore{args.min_score}_max{args.max_items}"
 
 
 def load_or_train_model(args, model_name):

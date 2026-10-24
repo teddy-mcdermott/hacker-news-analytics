@@ -10,6 +10,8 @@ services:
       - hn-network 
   db:
     image: postgres:14-alpine
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
       - /mnt/database/postgres_data:/var/lib/postgresql/data
     environment:
@@ -39,6 +41,26 @@ services:
     volumes:
       - cache_data:/app/cache
       - image_data:/app/Analysis/time_series/static/images 
+
+  topics:
+    build:
+      context: .
+      dockerfile: Project.Dockerfile
+      target: topics_image
+    profiles: ["topics"]
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+    depends_on:
+      - db
+    networks:
+      - hn-network
+    volumes:
+      - cache_data:/app/cache
+      - image_data:/app/Analysis/time_series/static/images
 
   scraper:
     build:

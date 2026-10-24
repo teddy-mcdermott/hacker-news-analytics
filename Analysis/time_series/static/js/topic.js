@@ -1,5 +1,3 @@
-let pollInterval;
-
 async function startAnalysis() {
 
     const btn = document.getElementById('run-btn');
@@ -22,8 +20,6 @@ async function startAnalysis() {
     };
 
     try {
-        addStatusItem("Starting background task...", "success");
-        
         const response = await fetch('/analyse_topics', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -32,39 +28,14 @@ async function startAnalysis() {
         
         const data = await response.json();
         
-        if (data.success) {
-            beginPolling(data.task_id);
-        } else {
+        if (!response.ok || !data.success) {
             throw new Error(data.error);
         }
+        finishAnalysis(data.images);
     } catch (err) {
         addStatusItem(`Error: ${err.message}`, "error");
         btn.disabled = false;
     }
-}
-
-function beginPolling(taskId) {
-    const statusText = document.getElementById('status-text');
-    
-    pollInterval = setInterval(async () => {
-        try {
-            const res = await fetch(`/check_status/${taskId}`);
-            const data = await res.json();
-
-            if (data.status === 'completed') {
-                clearInterval(pollInterval);
-                finishAnalysis(data.images);
-            } else if (data.status === 'processing') {
-                statusText.innerText = "Processing BERTopic Model...";
-            } else if (data.status === 'error') {
-                clearInterval(pollInterval);
-                addStatusItem(`Task Failed: ${data.message}`, "error");
-                document.getElementById('run-btn').disabled = false;
-            }
-        } catch (e) {
-            console.error("Poll error:", e);
-        }
-    }, 4000); // Check every 4 seconds
 }
 
 function finishAnalysis(images) {
